@@ -126,7 +126,7 @@ pub fn metric_delivery_pace(opts: &ScanOptions) -> Result<MetricResult, GitError
             extra: None,
         })
         .collect();
-    let summary = format!("{} months with commits since {}", rows.len(), opts.since);
+    let summary = delivery_pace_summary(&rows, months.len(), opts.since);
     Ok(MetricResult {
         id: MetricId::DeliveryPace,
         label: MetricId::DeliveryPace.label().to_string(),
@@ -134,6 +134,21 @@ pub fn metric_delivery_pace(opts: &ScanOptions) -> Result<MetricResult, GitError
         rows: Some(rows),
         scalar: Some(months.len() as u64),
     })
+}
+
+fn delivery_pace_summary(rows: &[MetricRow], total_commits: usize, since: &str) -> String {
+    match rows.len() {
+        0 => format!("no commits since {since}"),
+        1 => format!(
+            "1 active month ({}); {total_commits} commits since {since}",
+            rows[0].key
+        ),
+        n => format!(
+            "{n} active months ({}–{}); {total_commits} commits since {since}",
+            rows[0].key,
+            rows[n - 1].key
+        ),
+    }
 }
 
 pub fn metric_firefighting(opts: &ScanOptions) -> Result<MetricResult, GitError> {
@@ -170,4 +185,29 @@ pub fn run_all(opts: &ScanOptions) -> Result<Vec<MetricResult>, GitError> {
         out.push(run_single(*id, opts)?);
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::MetricRow;
+
+    #[test]
+    fn delivery_pace_summary_includes_range_and_commit_count() {
+        let rows = vec![
+            MetricRow {
+                key: "2025-07".into(),
+                value: 10,
+                extra: None,
+            },
+            MetricRow {
+                key: "2026-06".into(),
+                value: 5,
+                extra: None,
+            },
+        ];
+        let s = delivery_pace_summary(&rows, 15, "1 year ago");
+        assert!(s.contains("2 active months (2025-07–2026-06)"));
+        assert!(s.contains("15 commits since 1 year ago"));
+    }
 }

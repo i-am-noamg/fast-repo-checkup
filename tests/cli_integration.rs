@@ -397,6 +397,53 @@ fn delivery_pace_respects_since_flag() {
 }
 
 #[test]
+fn delivery_pace_groups_by_committer_date() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path();
+    git(repo, &["init"]);
+    git(repo, &["config", "user.email", "t@t.com"]);
+    git(repo, &["config", "user.name", "T"]);
+
+    for m in [
+        "2024-01", "2024-06", "2025-01", "2025-06", "2026-01", "2026-06",
+    ] {
+        git_with_env(
+            repo,
+            &["commit", "--allow-empty", "-m", &format!("work {m}")],
+            &[
+                ("GIT_AUTHOR_DATE", &format!("{m}-15 12:00:00")),
+                ("GIT_COMMITTER_DATE", "2026-07-03 12:00:00"),
+            ],
+        );
+    }
+
+    let out = run_cli(&[
+        "metrics",
+        "delivery_pace",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--since",
+        "1 year ago",
+        "--format",
+        "json",
+    ]);
+    assert!(out.status.success(), "stderr={}", String::from_utf8_lossy(&out.stderr));
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let rows = json["metrics"][0]["rows"].as_array().unwrap();
+    assert_eq!(
+        rows.len(),
+        1,
+        "committer date grouping should collapse rebased author months; got {rows:?}"
+    );
+    assert_eq!(rows[0]["month"], "2026-07");
+    let summary = json["metrics"][0]["summary"].as_str().unwrap();
+    assert!(
+        !summary.contains("6 active months"),
+        "summary should not count author-date months: {summary}"
+    );
+}
+
+#[test]
 fn bus_factor_summary_counts_all_contributors() {
     let dir = tempfile::tempdir().unwrap();
     let repo = dir.path();

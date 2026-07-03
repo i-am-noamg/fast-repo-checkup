@@ -63,13 +63,16 @@ pub fn log_bug_hotspots(repo: &Path, pathspecs: &[&str]) -> Result<Vec<String>, 
     git_stdout_lines(repo, &args)
 }
 
-/// One line per commit: `%ad` with month format, scoped by `--since`.
+/// One line per commit: committer month (`%cd`), scoped by `--since`.
+///
+/// Uses committer date so grouping matches git's `--since` filter (author `%ad`
+/// would include months outside the window after rebases/cherry-picks).
 pub fn log_commit_months(repo: &Path, since: &str) -> Result<Vec<String>, GitError> {
     let out = git_stdout(
         repo,
         &[
             "log",
-            "--format=%ad",
+            "--format=%cd",
             "--date=format:%Y-%m",
             "--since",
             since,

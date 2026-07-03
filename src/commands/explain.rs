@@ -58,9 +58,12 @@ pub fn run_explain(name: &str, no_color: bool) -> anyhow::Result<()> {
             println!(
                 "  git log --format='%ad' --date=format:'%Y-%m' --since=\"<since>\" | sort | uniq -c"
             );
+            println!(
+                "  (blog uses author date; CLI groups by committer date %cd so months match --since)"
+            );
             println!();
             println!("{}", style.header_label("CLI equivalent:"));
-            println!("  git log --format=%ad --date=format:%Y-%m --since <since>");
+            println!("  git log --format=%cd --date=format:%Y-%m --since <since>");
             println!("  (CLI defaults --since to \"1 year ago\"; blog uses full history)");
         }
         MetricId::Firefighting => {
