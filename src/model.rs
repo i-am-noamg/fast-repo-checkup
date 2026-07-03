@@ -45,8 +45,12 @@ impl MetricId {
     pub fn description(self) -> &'static str {
         match self {
             MetricId::Churn => "Files changed most often in the time window.",
-            MetricId::BusFactor => "Contributors ranked by commit count (no merges).",
-            MetricId::BugHotspots => "Files touched in commits matching fix|bug|broken.",
+            MetricId::BusFactor => {
+                "Contributors ranked by commit count (no merges), scoped by --since unless --full-history."
+            }
+            MetricId::BugHotspots => {
+                "Files touched in fix|bug|broken commits, scoped by --since unless --full-history."
+            }
             MetricId::DeliveryPace => {
                 "Commit counts grouped by year-month within the --since window."
             }
@@ -210,6 +214,8 @@ pub struct ScanReport {
     pub repo: String,
     pub since: String,
     pub recent_since: String,
+    #[serde(default)]
+    pub full_history: bool,
     pub source_dirs: Vec<String>,
     pub metrics: Vec<MetricResult>,
     pub alerts: Vec<AlertHint>,

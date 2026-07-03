@@ -21,7 +21,13 @@ Why it matters:
 
 ## 2) Bus factor / ownership concentration
 
-Full history on the current branch (`HEAD`):
+Default window (`--since`, default `1 year ago`):
+
+```bash
+git shortlog -sn --no-merges --since="1 year ago"
+```
+
+Blog-faithful full history (`--full-history`):
 
 ```bash
 git shortlog -sn --no-merges
@@ -33,22 +39,22 @@ Secondary window for departed-contributor check:
 git shortlog -sn --no-merges --since="6 months ago"
 ```
 
-CLI: `--recent-since "6 months ago"`. The tool passes `HEAD` explicitly so `shortlog` does not read from stdin (empty under a closed stdin in subprocesses).
+CLI: `--since "1 year ago"`, `--recent-since "6 months ago"`, `--full-history` for blog mode. The tool passes `HEAD` explicitly so `shortlog` does not read from stdin (empty under a closed stdin in subprocesses).
 
 Why it matters:
 
-- If one person dominates, a departure creates knowledge risk.
-- If the top contributor from full history is absent in the recent window, flag it immediately.
+- If one person dominates the analysis window, a departure creates knowledge risk.
+- If the top contributor from the main window is absent in the recent window, flag it immediately.
 
 ## 3) Bug hotspots
 
-Same source-dir scoping as churn. Full history (no `--since` in the blog command):
+Same source-dir scoping as churn. Default window (`--since`); blog uses full history (`--full-history`):
 
 ```bash
-git log -i -E --grep="fix|bug|broken" --name-only --format='' | sort | uniq -c | sort -nr | head -20
+git log -i -E --grep="fix|bug|broken" --name-only --format='' --since="1 year ago"
 ```
 
-CLI: `--source-dir src` (repeatable), `--top 20`.
+CLI: `--source-dir src` (repeatable), `--since "1 year ago"`, `--top 20`, `--full-history` for blog mode.
 
 Why it matters:
 
@@ -84,10 +90,10 @@ Why it matters:
 
 ## Per-metric `--since` rules
 
-| Metric | `--since` | `--recent-since` | `--source-dir` |
-|--------|-----------|------------------|----------------|
-| churn | yes (default `1 year ago`) | — | yes |
-| bus_factor | no (full history) | yes (alerts) | no |
-| bug_hotspots | no (full history) | — | yes |
-| delivery_pace | yes (default `1 year ago`) | — | no |
-| firefighting | yes (default `1 year ago`) | — | no |
+| Metric | `--since` | `--recent-since` | `--full-history` | `--source-dir` |
+|--------|-----------|------------------|------------------|----------------|
+| churn | yes (default `1 year ago`) | — | — | yes |
+| bus_factor | yes (default `1 year ago`) | yes (alerts) | blog mode | no |
+| bug_hotspots | yes (default `1 year ago`) | — | blog mode | yes |
+| delivery_pace | yes (default `1 year ago`) | — | — | no |
+| firefighting | yes (default `1 year ago`) | — | — | no |

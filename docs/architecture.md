@@ -55,13 +55,13 @@ repo-drag-glance/
 
 ## Per-metric git invocations
 
-| Metric | Git args | `--since` | `--source-dir` |
-|--------|----------|-----------|----------------|
-| churn | `log --format=format: --name-only --since … [-- pathspecs]` | yes | pathspec + post-filter |
-| bus_factor | `shortlog -sn --no-merges HEAD` (+ recent window for alerts) | no | no |
-| bug_hotspots | `log -i -E --grep=fix\|bug\|broken --name-only --format= [-- pathspecs]` | no | pathspec + post-filter |
-| delivery_pace | `log --format=%ad --date=format:%Y-%m --since …` | yes | no |
-| firefighting | `log --oneline --since …` + keyword filter in Rust | yes | no |
+| Metric | Git args | `--since` | `--full-history` | `--source-dir` |
+|--------|----------|-----------|------------------|----------------|
+| churn | `log --format=format: --name-only --since … [-- pathspecs]` | yes | — | pathspec + post-filter |
+| bus_factor | `shortlog -sn --no-merges [--since …] HEAD` (+ recent window for alerts) | yes | blog mode | no |
+| bug_hotspots | `log -i -E --grep=fix\|bug\|broken --name-only --format= [--since …] [-- pathspecs]` | yes | blog mode | pathspec + post-filter |
+| delivery_pace | `log --format=%ad --date=format:%Y-%m --since …` | yes | — | no |
+| firefighting | `log --oneline --since …` + keyword filter in Rust | yes | — | no |
 
 File metrics count non-empty path lines (blog: `sort | uniq -c`), optionally filtered to `--source-dir` prefixes.
 
@@ -79,7 +79,7 @@ File metrics count non-empty path lines (blog: `sort | uniq -c`), optionally fil
 
 - **`MetricId`**: stable ids (`churn`, `bus_factor`, …) for CLI and JSON.
 - **`MetricResult`**: id, label, summary, optional `rows`, optional `scalar`.
-- **`ScanReport`**: `warnings`, `repo`, `since`, `recent_since`, `source_dirs`, `metrics`, `alerts`.
+- **`ScanReport`**: `warnings`, `repo`, `since`, `recent_since`, `full_history`, `source_dirs`, `metrics`, `alerts`.
 - **`AlertHint`**: `severity`, `code`, `message`, optional `evidence`.
 
 ## Guardrails

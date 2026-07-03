@@ -38,11 +38,18 @@ pub fn run_explain(name: &str, no_color: bool) -> anyhow::Result<()> {
             );
             println!("  git shortlog -sn --no-merges --since=\"<recent-since>\"");
             println!();
-            println!("{}", style.header_label("CLI equivalent:"));
+            println!("{}", style.header_label("CLI equivalent (default):"));
+            println!("  git shortlog -sn --no-merges --since <since> HEAD");
+            println!("  git shortlog -sn --no-merges --since <recent-since> HEAD");
+            println!();
+            println!("{}", style.header_label("CLI equivalent (--full-history):"));
             println!("  git shortlog -sn --no-merges HEAD");
             println!("  git shortlog -sn --no-merges --since <recent-since> HEAD");
             println!(
                 "`HEAD` is passed so shortlog does not read from stdin (empty under closed stdin)."
+            );
+            println!(
+                "Departed-contributor alerts compare the top author in the main window against <recent-since>."
             );
         }
         MetricId::BugHotspots => {
@@ -50,9 +57,14 @@ pub fn run_explain(name: &str, no_color: bool) -> anyhow::Result<()> {
             println!("  git log -i -E --grep=\"fix|bug|broken\" --name-only --format='' -- <source-dirs>");
             println!("    | sort | uniq -c | sort -nr | head -<top>");
             println!();
-            println!("{}", style.header_label("CLI equivalent:"));
+            println!("{}", style.header_label("CLI equivalent (default):"));
+            println!(
+                "  git log -i -E --grep=fix|bug|broken --name-only --format= --since <since> [-- pathspecs]"
+            );
+            println!();
+            println!("{}", style.header_label("CLI equivalent (--full-history):"));
             println!("  git log -i -E --grep=fix|bug|broken --name-only --format= [-- pathspecs]");
-            println!("  (full history; no --since in the blog command)");
+            println!("  (blog uses full history; CLI defaults to --since unless --full-history)");
         }
         MetricId::DeliveryPace => {
             println!(

@@ -9,6 +9,7 @@ const FIREFIGHTING_WARN_PER_YEAR: u64 = 8;
 /// Derive simple leadership hints from computed metrics.
 pub fn compute_alerts(
     metrics: &[MetricResult],
+    since: &str,
     recent_since: &str,
     opts: &ScanOptions<'_>,
 ) -> Vec<AlertHint> {
@@ -36,11 +37,16 @@ pub fn compute_alerts(
         if total > 0 {
             let ratio = top_n as f64 / total as f64;
             if ratio >= BUS_FACTOR_DOMINANCE {
+                let window = if opts.full_history {
+                    "full history on HEAD".to_string()
+                } else {
+                    format!("since {since}")
+                };
                 alerts.push(AlertHint {
                     severity: AlertSeverity::Warning,
                     code: "bus_factor_dominance".to_string(),
                     message: format!(
-                        "Top contributor authored {:.0}% of commits (full history on HEAD).",
+                        "Top contributor authored {:.0}% of commits ({window}).",
                         ratio * 100.0
                     ),
                     evidence: Some(format!("{top_name} ({top_n}/{total})")),
@@ -52,11 +58,16 @@ pub fn compute_alerts(
             let recent_names: std::collections::HashSet<_> =
                 recent.iter().map(|(n, _)| n.as_str()).collect();
             if !recent_names.contains(top_name.as_str()) {
+                let window = if opts.full_history {
+                    "full history".to_string()
+                } else {
+                    format!("since {since}")
+                };
                 alerts.push(AlertHint {
                     severity: AlertSeverity::Warning,
                     code: "departed_top_contributor".to_string(),
                     message: format!(
-                        "Top contributor \"{top_name}\" has no commits since {recent_since} on HEAD."
+                        "Top contributor \"{top_name}\" ({window}) has no commits since {recent_since} on HEAD."
                     ),
                     evidence: Some(format!("recent_since={recent_since}")),
                 });
@@ -93,16 +104,18 @@ pub fn build_report(
     repo: String,
     since: String,
     recent_since: String,
+    full_history: bool,
     source_dirs: Vec<String>,
     metrics: Vec<MetricResult>,
     opts: &ScanOptions<'_>,
 ) -> ScanReport {
-    let alerts = compute_alerts(&metrics, &recent_since, opts);
+    let alerts = compute_alerts(&metrics, &since, &recent_since, opts);
     ScanReport {
         warnings: report::source_dir_warnings(&metrics, &source_dirs),
         repo,
         since,
         recent_since,
+        full_history,
         source_dirs,
         metrics,
         alerts,
@@ -212,6 +225,7 @@ mod tests {
             repo: std::path::Path::new("."),
             since: "1 year ago",
             recent_since: "6 months ago",
+            full_history: false,
             source_dirs: &[],
             source_matcher,
             top: 20,
@@ -246,7 +260,7 @@ mod tests {
                 scalar: None,
             },
         ];
-        let a = compute_alerts(&metrics, "6 months ago", &opts);
+        let a = compute_alerts(&metrics, "1 year ago", "6 months ago", &opts);
         assert!(a.iter().any(|x| x.code == "churn_and_bug_overlap"));
     }
 

@@ -22,6 +22,7 @@ pub struct ScanOptions<'a> {
     pub repo: &'a Path,
     pub since: &'a str,
     pub recent_since: &'a str,
+    pub full_history: bool,
     pub source_dirs: &'a [String],
     pub source_matcher: &'a SourceDirMatcher,
     pub top: usize,
@@ -59,7 +60,11 @@ pub fn metric_churn(opts: &ScanOptions) -> Result<MetricResult, GitError> {
 }
 
 pub fn metric_bus_factor(opts: &ScanOptions) -> Result<MetricResult, GitError> {
-    let text = shortlog_sn_all(opts.repo)?;
+    let text = if opts.full_history {
+        shortlog_sn_all(opts.repo)?
+    } else {
+        shortlog_sn_since(opts.repo, opts.since)?
+    };
     let parsed = parse_shortlog(&text);
     let rows: Vec<MetricRow> = parsed
         .iter()
@@ -72,8 +77,13 @@ pub fn metric_bus_factor(opts: &ScanOptions) -> Result<MetricResult, GitError> {
         .collect();
     let total: u64 = parsed.iter().map(|(_, n)| n).sum();
     let contributor_count = parsed.len();
+    let window = if opts.full_history {
+        "full history on HEAD".to_string()
+    } else {
+        format!("since {}", opts.since)
+    };
     let summary = format!(
-        "{contributor_count} contributors (showing top {}), {total} commits (full history on HEAD)",
+        "{contributor_count} contributors (showing top {}), {total} commits ({window})",
         rows.len()
     );
     Ok(MetricResult {
@@ -94,7 +104,12 @@ pub fn bus_factor_recent_authors(opts: &ScanOptions) -> Result<Vec<(String, u64)
 pub fn metric_bug_hotspots(opts: &ScanOptions) -> Result<MetricResult, GitError> {
     let pathspecs = pathspec_refs(opts.source_dirs);
     let specs: Vec<&str> = pathspecs.iter().map(String::as_str).collect();
-    let lines = log_bug_hotspots(opts.repo, &specs)?;
+    let since = if opts.full_history {
+        None
+    } else {
+        Some(opts.since)
+    };
+    let lines = log_bug_hotspots(opts.repo, since, &specs)?;
     let counts = count_path_lines(&lines, opts.source_matcher);
     let top = top_n_counts(counts, opts.top);
     let rows: Vec<MetricRow> = top

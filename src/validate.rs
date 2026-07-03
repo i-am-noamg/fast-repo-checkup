@@ -107,6 +107,7 @@ mod tests {
             since: "1 year ago".into(),
             recent_since: "6 months ago".into(),
             top: 20,
+            full_history: false,
             format: crate::model::OutputFormat::Table,
         }
     }

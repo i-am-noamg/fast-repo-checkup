@@ -51,13 +51,18 @@ pub struct CommonOpts {
     #[arg(long = "source-dir")]
     pub source_dirs: Vec<String>,
 
-    /// Time window for churn, firefighting, and delivery pace (`git --since`).
+    /// Time window for all metrics (`git --since`). Bus factor and bug hotspots
+    /// use full history when `--full-history` is set.
     #[arg(long, default_value = "1 year ago")]
     pub since: String,
 
-    /// Recent window for bus-factor departed-contributor check.
+    /// Shorter window for bus-factor departed-contributor alerts (should be ≤ `--since`).
     #[arg(long, default_value = "6 months ago")]
     pub recent_since: String,
+
+    /// Use full git history for bus factor and bug hotspots (blog-faithful mode).
+    #[arg(long)]
+    pub full_history: bool,
 
     /// Max rows for file/author tables.
     #[arg(long, default_value_t = 20)]

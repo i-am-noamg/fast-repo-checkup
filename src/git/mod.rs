@@ -49,8 +49,12 @@ pub fn log_name_only_since(
     git_stdout_lines(repo, &args)
 }
 
-/// Bug hotspot log: `git log -i -E --grep=... --name-only --format= [-- pathspec...]`
-pub fn log_bug_hotspots(repo: &Path, pathspecs: &[&str]) -> Result<Vec<String>, GitError> {
+/// Bug hotspot log: `git log -i -E --grep=... --name-only --format= [--since ...] [-- pathspec...]`
+pub fn log_bug_hotspots(
+    repo: &Path,
+    since: Option<&str>,
+    pathspecs: &[&str],
+) -> Result<Vec<String>, GitError> {
     let mut args = vec![
         "log".to_string(),
         "-i".to_string(),
@@ -59,6 +63,10 @@ pub fn log_bug_hotspots(repo: &Path, pathspecs: &[&str]) -> Result<Vec<String>, 
         "--name-only".to_string(),
         "--format=".to_string(),
     ];
+    if let Some(since) = since {
+        args.push("--since".to_string());
+        args.push(since.to_string());
+    }
     append_pathspecs(&mut args, pathspecs);
     git_stdout_lines(repo, &args)
 }

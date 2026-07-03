@@ -67,6 +67,40 @@ fn init_monorepo_fixture(root: &Path) {
     git(root, &["commit", "-m", "fix bug in foo"]);
 }
 
+fn prior_lead_env() -> [(&'static str, &'static str); 6] {
+    [
+        ("GIT_AUTHOR_NAME", "PriorLead"),
+        ("GIT_AUTHOR_EMAIL", "prior@repodragglance.test"),
+        ("GIT_COMMITTER_NAME", "PriorLead"),
+        ("GIT_COMMITTER_EMAIL", "prior@repodragglance.test"),
+        ("GIT_AUTHOR_DATE", "2025-11-15T12:00:00"),
+        ("GIT_COMMITTER_DATE", "2025-11-15T12:00:00"),
+    ]
+}
+
+fn init_windowed_departed_repo(root: &Path) {
+    fs::create_dir_all(root).unwrap();
+    git(root, &["init"]);
+    git(
+        root,
+        &["config", "user.email", "fixture@repodragglance.test"],
+    );
+    git(root, &["config", "user.name", "Fixture"]);
+    fs::create_dir_all(root.join("src")).unwrap();
+    fs::write(root.join("src/lib.rs"), "// v1\n").unwrap();
+    git(root, &["add", "."]);
+    git_with_env(root, &["commit", "-m", "prior 1"], &prior_lead_env());
+    fs::write(root.join("src/lib.rs"), "// v2\n").unwrap();
+    git(root, &["add", "."]);
+    git_with_env(root, &["commit", "-m", "prior 2"], &prior_lead_env());
+    fs::write(root.join("src/lib.rs"), "// v3\n").unwrap();
+    git(root, &["add", "."]);
+    git_with_env(root, &["commit", "-m", "prior 3"], &prior_lead_env());
+    fs::write(root.join("src/lib.rs"), "// recent\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-m", "recent work"]);
+}
+
 fn old_author_env() -> [(&'static str, &'static str); 6] {
     [
         ("GIT_AUTHOR_NAME", "OldAuthor"),
@@ -248,7 +282,7 @@ fn source_dir_excludes_root_lockfile_from_churn() {
 }
 
 #[test]
-fn bug_hotspots_finds_fix_commit_without_since() {
+fn bug_hotspots_finds_fix_commit_in_since_window() {
     let dir = tempfile::tempdir().unwrap();
     let repo = dir.path();
     init_fixture_repo(repo);
@@ -310,6 +344,7 @@ fn bus_factor_departed_top_contributor_alert() {
         "bus_factor",
         "--repo",
         repo.to_str().unwrap(),
+        "--full-history",
         "--recent-since",
         "1 day ago",
         "--format",
@@ -332,28 +367,156 @@ fn bus_factor_departed_top_contributor_alert() {
 }
 
 #[test]
-fn bus_factor_ignores_since_flag() {
+fn bus_factor_windowed_departed_top_contributor_alert() {
     let dir = tempfile::tempdir().unwrap();
     let repo = dir.path();
-    init_fixture_repo(repo);
+    init_windowed_departed_repo(repo);
 
-    let out_all = run_cli(&[
+    let out = run_cli(&[
         "metrics",
         "bus_factor",
         "--repo",
         repo.to_str().unwrap(),
         "--since",
+        "1 year ago",
+        "--recent-since",
+        "6 months ago",
+        "--format",
+        "json",
+    ]);
+    assert!(
+        out.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let alerts = v["alerts"].as_array().unwrap();
+    assert!(
+        alerts.iter().any(|a| {
+            a.get("code").and_then(|c| c.as_str()) == Some("departed_top_contributor")
+        }),
+        "expected departed_top_contributor alert for windowed bus factor"
+    );
+}
+
+#[test]
+fn bus_factor_respects_since_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path();
+    init_departed_author_repo(repo);
+
+    let out_narrow = run_cli(&[
+        "metrics",
+        "bus_factor",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--since",
+        "1 year ago",
+        "--format",
+        "json",
+    ]);
+    assert!(out_narrow.status.success());
+    let narrow: serde_json::Value = serde_json::from_slice(&out_narrow.stdout).unwrap();
+    let narrow_total = narrow["metrics"][0]["scalar"].as_u64().unwrap();
+
+    let out_wide = run_cli(&[
+        "metrics",
+        "bus_factor",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--since",
+        "1970-01-01",
+        "--format",
+        "json",
+    ]);
+    assert!(out_wide.status.success());
+    let wide: serde_json::Value = serde_json::from_slice(&out_wide.stdout).unwrap();
+    let wide_total = wide["metrics"][0]["scalar"].as_u64().unwrap();
+
+    assert_eq!(narrow_total, 1, "narrow since should exclude old commits");
+    assert!(
+        wide_total > narrow_total,
+        "wider --since should include more commits; narrow={narrow_total} wide={wide_total}"
+    );
+}
+
+#[test]
+fn bus_factor_full_history_ignores_since() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path();
+    init_departed_author_repo(repo);
+
+    let out = run_cli(&[
+        "metrics",
+        "bus_factor",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--full-history",
+        "--since",
         "1 day ago",
         "--format",
         "json",
     ]);
-    assert!(out_all.status.success());
-    let v: serde_json::Value = serde_json::from_slice(&out_all.stdout).unwrap();
+    assert!(out.status.success());
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     let total = v["metrics"][0]["scalar"].as_u64().unwrap();
-    assert!(
-        total >= 3,
-        "bus_factor should use full history, not --since; got {total} commits"
+    assert_eq!(
+        total, 4,
+        "bus_factor --full-history should ignore --since; got {total} commits"
     );
+    assert_eq!(v["full_history"], true);
+}
+
+#[test]
+fn bug_hotspots_respects_since_flag() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path();
+    init_departed_author_repo(repo);
+    fs::write(repo.join("src/lib.rs"), "// old bug fix\n").unwrap();
+    git(repo, &["add", "."]);
+    git_with_env(
+        repo,
+        &["commit", "-m", "fix ancient bug"],
+        &old_author_env(),
+    );
+
+    let out_narrow = run_cli(&[
+        "metrics",
+        "bug_hotspots",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--source-dir",
+        "src",
+        "--since",
+        "1 year ago",
+        "--format",
+        "json",
+    ]);
+    assert!(out_narrow.status.success());
+    let narrow: serde_json::Value = serde_json::from_slice(&out_narrow.stdout).unwrap();
+    let narrow_rows = narrow["metrics"][0]["rows"].as_array().unwrap().len();
+
+    let out_full = run_cli(&[
+        "metrics",
+        "bug_hotspots",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--source-dir",
+        "src",
+        "--full-history",
+        "--format",
+        "json",
+    ]);
+    assert!(out_full.status.success());
+    let full: serde_json::Value = serde_json::from_slice(&out_full.stdout).unwrap();
+    let full_rows = full["metrics"][0]["rows"].as_array().unwrap().len();
+
+    assert!(
+        full_rows >= narrow_rows,
+        "full history should include at least as many hotspot files; narrow={narrow_rows} full={full_rows}"
+    );
+    assert_eq!(full["full_history"], true);
 }
 
 #[test]
@@ -454,6 +617,7 @@ fn bus_factor_summary_counts_all_contributors() {
         "bus_factor",
         "--repo",
         repo.to_str().unwrap(),
+        "--full-history",
         "--top",
         "1",
         "--format",

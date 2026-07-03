@@ -39,6 +39,7 @@ fn sanitize_report(report: &ScanReport) -> ScanReport {
         repo: sanitize::display_text(&report.repo),
         since: sanitize::display_text(&report.since),
         recent_since: sanitize::display_text(&report.recent_since),
+        full_history: report.full_history,
         source_dirs: report
             .source_dirs
             .iter()
@@ -99,14 +100,22 @@ fn render_table(report: &ScanReport, style: Style) -> String {
     writeln!(
         &mut buf,
         "{} {}",
-        style.header_label("Since (churn/firefighting/delivery pace):"),
+        style.header_label("Since:"),
         report.since
     )
     .unwrap();
+    if report.full_history {
+        writeln!(
+            &mut buf,
+            "{} yes (bus factor, bug hotspots)",
+            style.header_label("Full history:")
+        )
+        .unwrap();
+    }
     writeln!(
         &mut buf,
         "{} {}",
-        style.header_label("Recent since (bus factor):"),
+        style.header_label("Recent since (bus factor alerts):"),
         report.recent_since
     )
     .unwrap();
@@ -183,6 +192,7 @@ mod tests {
             repo: "/tmp".into(),
             since: "1 year ago".into(),
             recent_since: "6 months ago".into(),
+            full_history: false,
             source_dirs: vec!["src".into()],
             metrics: vec![
                 MetricResult {

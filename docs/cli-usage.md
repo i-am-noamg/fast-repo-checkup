@@ -24,8 +24,9 @@ Common flags:
 
 - `--repo <path>` — repository root (default: `.`)
 - `--source-dir <path>` — repeatable; scopes churn and bug_hotspots (blog: run from `src/` or `app/`). Globs supported, e.g. `services/*/src`.
-- `--since <git-date>` — churn, firefighting, and delivery pace (default: `1 year ago`)
-- `--recent-since <git-date>` — bus-factor departed-contributor check (default: `6 months ago`)
+- `--since <git-date>` — all metrics (default: `1 year ago`); bus factor and bug hotspots use full history when `--full-history` is set
+- `--recent-since <git-date>` — bus-factor departed-contributor alerts (default: `6 months ago`; should be ≤ `--since`)
+- `--full-history` — blog-faithful full history for bus factor and bug hotspots
 - `--top <n>` — max rows for file/author tables (default: `20`)
 - `--format table|json` — output (default: `table`)
 - `--no-color` — disable ANSI colors in table output (also respects `NO_COLOR`)
@@ -43,8 +44,8 @@ cargo run -- scan --format json --repo /path/to/repo --source-dir src --source-d
 Runs one metric by id or alias:
 
 - `churn` — high-churn files (`--since`, `--source-dir`)
-- `bus_factor` — full-history shortlog on `HEAD` (`--recent-since` for alerts)
-- `bug_hotspots` — commits matching fix|bug|broken (`--source-dir`, no `--since`)
+- `bus_factor` — contributor shortlog on `HEAD` (`--since`; `--recent-since` for alerts; `--full-history` for blog mode)
+- `bug_hotspots` — commits matching fix|bug|broken (`--since`, `--source-dir`; `--full-history` for blog mode)
 - `delivery_pace` — commits per `YYYY-MM` within `--since` (default: `1 year ago`)
 - `firefighting` — oneline subjects matching revert/hotfix/emergency/rollback (`--since`)
 
