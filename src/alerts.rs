@@ -171,10 +171,7 @@ fn delivery_drop_hint_with_now(metrics: &[MetricResult], current_ym: &str) -> Op
     }
     let eval_idx = rows.len() - 1 - skip_trailing;
     let last = rows[eval_idx].value;
-    let prev: u64 = rows[eval_idx - 3..eval_idx]
-        .iter()
-        .map(|r| r.value)
-        .sum();
+    let prev: u64 = rows[eval_idx - 3..eval_idx].iter().map(|r| r.value).sum();
     let prev_avg = prev as f64 / 3.0;
     if prev_avg < 1.0 {
         return None;

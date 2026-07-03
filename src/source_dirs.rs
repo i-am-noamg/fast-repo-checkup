@@ -62,11 +62,7 @@ impl SourceDirMatcher {
         for dir in source_dirs {
             let dir = normalize_path(dir.trim_end_matches(['/', '\\']));
             for pattern in [dir.as_str(), &format!("{dir}/**")] {
-                builder.add(
-                    GlobBuilder::new(pattern)
-                        .literal_separator(true)
-                        .build()?,
-                );
+                builder.add(GlobBuilder::new(pattern).literal_separator(true).build()?);
             }
         }
         Ok(Self {

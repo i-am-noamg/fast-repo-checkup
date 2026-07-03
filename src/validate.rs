@@ -78,9 +78,8 @@ fn validate_source_dir(value: &str) -> Result<()> {
         }
     }
     let trimmed = value.trim_end_matches(['/', '\\']);
-    source_dirs::validate_glob_compile(trimmed).map_err(|e| {
-        anyhow::anyhow!("--source-dir {value:?} is invalid: {e}")
-    })?;
+    source_dirs::validate_glob_compile(trimmed)
+        .map_err(|e| anyhow::anyhow!("--source-dir {value:?} is invalid: {e}"))?;
     Ok(())
 }
 

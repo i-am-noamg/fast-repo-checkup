@@ -11,8 +11,8 @@ use crate::validate;
 pub fn run_scan(common: &CommonOpts, no_color: bool) -> anyhow::Result<()> {
     validate::validate_common_opts(common).context("invalid arguments")?;
     let source_dirs = validate::normalize_source_dirs(&common.source_dirs)?;
-    let source_matcher = SourceDirMatcher::new(&source_dirs)
-        .context("invalid --source-dir glob patterns")?;
+    let source_matcher =
+        SourceDirMatcher::new(&source_dirs).context("invalid --source-dir glob patterns")?;
     git::check_has_commits(&common.repo).context("repository check")?;
     let opts = ScanOptions {
         repo: &common.repo,

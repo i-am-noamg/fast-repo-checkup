@@ -590,7 +590,11 @@ fn delivery_pace_groups_by_committer_date() {
         "--format",
         "json",
     ]);
-    assert!(out.status.success(), "stderr={}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let json: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     let rows = json["metrics"][0]["rows"].as_array().unwrap();
     assert_eq!(
