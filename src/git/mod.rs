@@ -7,6 +7,8 @@ pub use run::git_stdout;
 use std::collections::HashMap;
 use std::path::Path;
 
+use crate::source_dirs::SourceDirMatcher;
+
 /// Fails when the path is missing, not a git repo, or has no commits yet.
 pub fn check_has_commits(repo: &Path) -> Result<(), GitError> {
     if !repo.exists() {
@@ -114,30 +116,20 @@ fn normalize_git_path(path: &str) -> String {
     path.replace('\\', "/")
 }
 
-/// True when `path` is under any listed source dir prefix (or when no dirs given).
-pub fn path_matches_source_dirs(path: &str, source_dirs: &[String]) -> bool {
-    if source_dirs.is_empty() {
-        return true;
-    }
-    let path = normalize_git_path(path);
-    for dir in source_dirs {
-        let prefix = normalize_git_path(dir.trim_end_matches(['/', '\\']));
-        if path == prefix || path.starts_with(&format!("{prefix}/")) {
-            return true;
-        }
-    }
-    false
+/// True when `path` is under any listed source dir prefix or glob (or when no dirs given).
+pub fn path_matches_source_dirs(path: &str, matcher: &SourceDirMatcher) -> bool {
+    matcher.matches(path)
 }
 
 /// Count non-empty path lines (blog: `sort | uniq -c`), optionally filtered by source dirs.
-pub fn count_path_lines(lines: &[String], source_dirs: &[String]) -> HashMap<String, u64> {
+pub fn count_path_lines(lines: &[String], matcher: &SourceDirMatcher) -> HashMap<String, u64> {
     let mut counts: HashMap<String, u64> = HashMap::new();
     for line in lines {
         let t = normalize_git_path(line.trim());
         if t.is_empty() {
             continue;
         }
-        if !path_matches_source_dirs(&t, source_dirs) {
+        if !matcher.matches(&t) {
             continue;
         }
         *counts.entry(t).or_insert(0) += 1;
@@ -194,6 +186,12 @@ fn git_stdout_lines(repo: &Path, args: &[String]) -> Result<Vec<String>, GitErro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::source_dirs::SourceDirMatcher;
+
+    fn matcher(dirs: &[&str]) -> SourceDirMatcher {
+        let dirs: Vec<String> = dirs.iter().map(|s| (*s).to_string()).collect();
+        SourceDirMatcher::new(&dirs).unwrap()
+    }
 
     #[test]
     fn count_path_lines_basic() {
@@ -202,9 +200,10 @@ mod tests {
             "src/a.rs".to_string(),
             "README.md".to_string(),
         ];
-        let m = count_path_lines(&lines, &[]);
-        assert_eq!(m.get("src/a.rs"), Some(&2));
-        assert_eq!(m.get("README.md"), Some(&1));
+        let m = matcher(&[]);
+        let counts = count_path_lines(&lines, &m);
+        assert_eq!(counts.get("src/a.rs"), Some(&2));
+        assert_eq!(counts.get("README.md"), Some(&1));
     }
 
     #[test]
@@ -214,28 +213,28 @@ mod tests {
             "Cargo.lock".to_string(),
             "apps/foo.ts".to_string(),
         ];
-        let dirs = vec!["src".to_string(), "apps".to_string()];
-        let m = count_path_lines(&lines, &dirs);
-        assert_eq!(m.get("src/a.rs"), Some(&1));
-        assert_eq!(m.get("apps/foo.ts"), Some(&1));
-        assert!(!m.contains_key("Cargo.lock"));
+        let m = matcher(&["src", "apps"]);
+        let counts = count_path_lines(&lines, &m);
+        assert_eq!(counts.get("src/a.rs"), Some(&1));
+        assert_eq!(counts.get("apps/foo.ts"), Some(&1));
+        assert!(!counts.contains_key("Cargo.lock"));
     }
 
     #[test]
     fn path_matches_source_dirs_filter() {
-        let dirs = vec!["src".to_string()];
-        assert!(path_matches_source_dirs("src/lib.rs", &dirs));
-        assert!(path_matches_source_dirs("src", &dirs));
-        assert!(path_matches_source_dirs(r"src\lib.rs", &dirs));
-        assert!(!path_matches_source_dirs("Cargo.lock", &dirs));
+        let m = matcher(&["src"]);
+        assert!(path_matches_source_dirs("src/lib.rs", &m));
+        assert!(path_matches_source_dirs("src", &m));
+        assert!(path_matches_source_dirs(r"src\lib.rs", &m));
+        assert!(!path_matches_source_dirs("Cargo.lock", &m));
     }
 
     #[test]
     fn count_path_lines_normalizes_backslashes() {
         let lines = vec![r"src\a.rs".to_string(), "src/a.rs".to_string()];
-        let dirs = vec!["src".to_string()];
-        let m = count_path_lines(&lines, &dirs);
-        assert_eq!(m.get("src/a.rs"), Some(&2));
+        let m = matcher(&["src"]);
+        let counts = count_path_lines(&lines, &m);
+        assert_eq!(counts.get("src/a.rs"), Some(&2));
     }
 
     #[test]

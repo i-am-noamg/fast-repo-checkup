@@ -38,7 +38,7 @@ We aim to acknowledge reports within a few business days.
 | Command injection | No shell; `git` invoked with explicit argument list |
 | Environment hijack | `GIT_*`, `LD_PRELOAD`, `DYLD_*`, and `REPO_DRAG_GLANCE_*` are not passed to git child processes |
 | Git binary | Override with `REPO_DRAG_GLANCE_GIT` (single-line path only) |
-| Pathspec abuse | `--source-dir` rejects magic pathspecs, `..`, absolute paths, and `-` prefixes |
+| Pathspec abuse | `--source-dir` rejects user-supplied pathspec magic (`:`), `..`, absolute paths, and `-` prefixes; globs are wrapped as `:(glob)…` by the CLI |
 | Output safety | Git-derived strings are sanitized before table/JSON output (ANSI/control stripping) |
 | Error leakage | Git stderr is omitted from default errors; set `REPO_DRAG_GLANCE_VERBOSE=1` for details |
 | Supply chain | `Cargo.lock` committed; CI runs `cargo test --locked`, RustSec audit, and `cargo deny` |

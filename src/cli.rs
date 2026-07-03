@@ -47,7 +47,7 @@ pub struct CommonOpts {
     pub repo: PathBuf,
 
     /// Source directories for file-based metrics (churn, bug_hotspots).
-    /// Repeatable, e.g. `--source-dir src --source-dir apps`.
+    /// Repeatable; supports globs, e.g. `--source-dir src --source-dir 'services/*/src'`.
     #[arg(long = "source-dir")]
     pub source_dirs: Vec<String>,
 

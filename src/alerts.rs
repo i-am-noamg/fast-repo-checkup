@@ -167,20 +167,23 @@ fn delivery_drop_hint(metrics: &[MetricResult]) -> Option<String> {
 mod tests {
     use super::*;
     use crate::model::MetricRow;
+    use crate::source_dirs::SourceDirMatcher;
 
-    fn test_opts() -> ScanOptions<'static> {
+    fn test_opts(source_matcher: &SourceDirMatcher) -> ScanOptions<'_> {
         ScanOptions {
             repo: std::path::Path::new("."),
             since: "1 year ago",
             recent_since: "6 months ago",
             source_dirs: &[],
+            source_matcher,
             top: 20,
         }
     }
 
     #[test]
     fn overlap_alert() {
-        let opts = test_opts();
+        let source_matcher = SourceDirMatcher::new(&[]).unwrap();
+        let opts = test_opts(&source_matcher);
         let metrics = vec![
             MetricResult {
                 id: MetricId::Churn,

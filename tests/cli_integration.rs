@@ -47,6 +47,26 @@ fn init_fixture_repo(root: &Path) {
     );
 }
 
+fn init_monorepo_fixture(root: &Path) {
+    fs::create_dir_all(root).unwrap();
+    git(root, &["init"]);
+    git(
+        root,
+        &["config", "user.email", "fixture@repodragglance.test"],
+    );
+    git(root, &["config", "user.name", "Fixture"]);
+    fs::create_dir_all(root.join("services/foo/src")).unwrap();
+    fs::create_dir_all(root.join("services/bar/src")).unwrap();
+    fs::write(root.join("services/foo/src/lib.rs"), "// foo\n").unwrap();
+    fs::write(root.join("services/bar/src/lib.rs"), "// bar\n").unwrap();
+    fs::write(root.join("Cargo.lock"), "version = 3\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-m", "init"]);
+    fs::write(root.join("services/foo/src/lib.rs"), "// foo fix bug\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-m", "fix bug in foo"]);
+}
+
 fn old_author_env() -> [(&'static str, &'static str); 6] {
     [
         ("GIT_AUTHOR_NAME", "OldAuthor"),
@@ -403,6 +423,41 @@ fn bus_factor_summary_counts_all_contributors() {
         summary.contains("showing top 1"),
         "expected top row cap in summary, got: {summary}"
     );
+}
+
+#[test]
+fn glob_source_dir_scopes_monorepo_services() {
+    let dir = tempfile::tempdir().unwrap();
+    let repo = dir.path();
+    init_monorepo_fixture(repo);
+
+    let out = run_cli(&[
+        "metrics",
+        "churn",
+        "--repo",
+        repo.to_str().unwrap(),
+        "--source-dir",
+        "services/*/src",
+        "--since",
+        "1970-01-01",
+        "--format",
+        "json",
+    ]);
+    assert!(
+        out.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let rows = v["metrics"][0]["rows"].as_array().unwrap();
+    let keys: Vec<_> = rows
+        .iter()
+        .filter_map(|r| r.get("file").and_then(|k| k.as_str()))
+        .collect();
+    assert!(keys.iter().any(|k| k.starts_with("services/foo/src/")));
+    assert!(keys.iter().any(|k| k.starts_with("services/bar/src/")));
+    assert!(!keys.contains(&"Cargo.lock"));
 }
 
 #[test]

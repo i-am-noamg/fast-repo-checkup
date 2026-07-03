@@ -7,6 +7,7 @@ use crate::git::{
     shortlog_sn_since, top_n_counts,
 };
 use crate::model::{MetricId, MetricResult, MetricRow};
+use crate::source_dirs::{self, SourceDirMatcher};
 
 /// Default `--since` for churn / firefighting when not specified.
 pub const DEFAULT_SINCE: &str = "1 year ago";
@@ -22,18 +23,22 @@ pub struct ScanOptions<'a> {
     pub since: &'a str,
     pub recent_since: &'a str,
     pub source_dirs: &'a [String],
+    pub source_matcher: &'a SourceDirMatcher,
     pub top: usize,
 }
 
 fn pathspec_refs(source_dirs: &[String]) -> Vec<String> {
-    source_dirs.to_vec()
+    source_dirs
+        .iter()
+        .flat_map(|d| source_dirs::to_git_pathspecs(d))
+        .collect()
 }
 
 pub fn metric_churn(opts: &ScanOptions) -> Result<MetricResult, GitError> {
     let pathspecs = pathspec_refs(opts.source_dirs);
     let specs: Vec<&str> = pathspecs.iter().map(String::as_str).collect();
     let lines = log_name_only_since(opts.repo, opts.since, &specs)?;
-    let counts = count_path_lines(&lines, opts.source_dirs);
+    let counts = count_path_lines(&lines, opts.source_matcher);
     let top = top_n_counts(counts, opts.top);
     let rows: Vec<MetricRow> = top
         .iter()
@@ -90,7 +95,7 @@ pub fn metric_bug_hotspots(opts: &ScanOptions) -> Result<MetricResult, GitError>
     let pathspecs = pathspec_refs(opts.source_dirs);
     let specs: Vec<&str> = pathspecs.iter().map(String::as_str).collect();
     let lines = log_bug_hotspots(opts.repo, &specs)?;
-    let counts = count_path_lines(&lines, opts.source_dirs);
+    let counts = count_path_lines(&lines, opts.source_matcher);
     let top = top_n_counts(counts, opts.top);
     let rows: Vec<MetricRow> = top
         .iter()

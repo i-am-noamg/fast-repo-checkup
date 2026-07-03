@@ -3,6 +3,7 @@ use std::path::Path;
 use anyhow::{bail, Context, Result};
 
 use crate::cli::CommonOpts;
+use crate::source_dirs;
 
 const MAX_SINCE_LEN: usize = 256;
 const MAX_SOURCE_DIR_LEN: usize = 4096;
@@ -76,6 +77,10 @@ fn validate_source_dir(value: &str) -> Result<()> {
             bail!("--source-dir must not contain '..' components");
         }
     }
+    let trimmed = value.trim_end_matches(['/', '\\']);
+    source_dirs::validate_glob_compile(trimmed).map_err(|e| {
+        anyhow::anyhow!("--source-dir {value:?} is invalid: {e}")
+    })?;
     Ok(())
 }
 
@@ -126,6 +131,7 @@ mod tests {
     fn accepts_normal_source_dirs() {
         assert!(validate_source_dir("src").is_ok());
         assert!(validate_source_dir("apps/web").is_ok());
+        assert!(validate_source_dir("services/*/src").is_ok());
         let normalized = normalize_source_dirs(&["src/".into(), " apps ".into()]).unwrap();
         assert_eq!(normalized, vec!["src", "apps"]);
     }

@@ -23,7 +23,7 @@ cargo run -- scan --repo . --source-dir src
 Common flags:
 
 - `--repo <path>` — repository root (default: `.`)
-- `--source-dir <path>` — repeatable; scopes churn and bug_hotspots (blog: run from `src/` or `app/`)
+- `--source-dir <path>` — repeatable; scopes churn and bug_hotspots (blog: run from `src/` or `app/`). Globs supported, e.g. `services/*/src`.
 - `--since <git-date>` — churn, firefighting, and delivery pace (default: `1 year ago`)
 - `--recent-since <git-date>` — bus-factor departed-contributor check (default: `6 months ago`)
 - `--top <n>` — max rows for file/author tables (default: `20`)
