@@ -18,7 +18,7 @@ We aim to acknowledge reports within a few business days.
 
 ## Threat model
 
-`repo-drag-glance` is a **local, read-only CLI** that runs `git` subprocesses to analyze commit history. It does not open network connections, write to the target repository, or execute shell pipelines.
+`fast-repo-checkup` is a **local, read-only CLI** that runs `git` subprocesses to analyze commit history. It does not open network connections, write to the target repository, or execute shell pipelines.
 
 ### Intended use
 
@@ -36,11 +36,11 @@ We aim to acknowledge reports within a few business days.
 | Area | Mitigation |
 |------|------------|
 | Command injection | No shell; `git` invoked with explicit argument list |
-| Environment hijack | `GIT_*`, `LD_PRELOAD`, `DYLD_*`, and `REPO_DRAG_GLANCE_*` are not passed to git child processes |
-| Git binary | Override with `REPO_DRAG_GLANCE_GIT` (single-line path only) |
+| Environment hijack | `GIT_*`, `LD_PRELOAD`, `DYLD_*`, and `FAST_REPO_CHECKUP_*` are not passed to git child processes |
+| Git binary | Override with `FAST_REPO_CHECKUP_GIT` (single-line path only) |
 | Pathspec abuse | `--source-dir` rejects user-supplied pathspec magic (`:`), `..`, absolute paths, and `-` prefixes; globs are wrapped as `:(glob)…` by the CLI |
 | Output safety | Git-derived strings are sanitized before table/JSON output (ANSI/control stripping) |
-| Error leakage | Git stderr is omitted from default errors; set `REPO_DRAG_GLANCE_VERBOSE=1` for details |
+| Error leakage | Git stderr is omitted from default errors; set `FAST_REPO_CHECKUP_VERBOSE=1` for details |
 | Supply chain | `Cargo.lock` committed; CI runs `cargo test --locked`, RustSec audit, and `cargo deny` |
 
 ## Dependency and CI security

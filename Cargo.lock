@@ -167,6 +167,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast-repo-checkup"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "colored",
+ "globset",
+ "serde",
+ "serde_json",
+ "tabled",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,21 +401,6 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
-
-[[package]]
-name = "repo-drag-glance"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "colored",
- "globset",
- "serde",
- "serde_json",
- "tabled",
- "tempfile",
- "thiserror",
-]
 
 [[package]]
 name = "rustix"

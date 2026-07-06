@@ -98,7 +98,7 @@ jobs:
         run: cargo install --path . --locked --force
 
       - name: Binary smoke test
-        run: repo-drag-glance explain churn
+        run: fast-repo-checkup explain churn
 
   audit:
     runs-on: ubuntu-latest

@@ -15,7 +15,7 @@ It stays simple, fast, and cross-platform.
 ## Crate layout
 
 ```text
-repo-drag-glance/
+fast-repo-checkup/
   Cargo.toml
   src/
     lib.rs              # library root (metrics + git + report for tests)
@@ -101,13 +101,13 @@ Subprocess rules (see also `src/git/run.rs`):
 
 - **No shell** — `git` args are a fixed argv list.
 - **Scrubbed environment** — `GIT_*`, `LD_PRELOAD`, `DYLD_*`, and
-  `REPO_DRAG_GLANCE_*` are not inherited by git children. Override the git
-  binary with `REPO_DRAG_GLANCE_GIT` (single-line path).
+  `FAST_REPO_CHECKUP_*` are not inherited by git children. Override the git
+  binary with `FAST_REPO_CHECKUP_GIT` (single-line path).
 - **Validated CLI input** — `src/validate.rs` rejects abusive `--source-dir`
   pathspecs, `--` values, and oversized `--since` / `--top`.
 - **Sanitized output** — git-derived strings pass through `src/sanitize.rs`
   before table/JSON render (ANSI/control stripping).
-- **Redacted errors** — git stderr is hidden unless `REPO_DRAG_GLANCE_VERBOSE=1`.
+- **Redacted errors** — git stderr is hidden unless `FAST_REPO_CHECKUP_VERBOSE=1`.
 
 Supply chain: [`deny.toml`](../deny.toml), RustSec audit, and Dependabot in CI.
 

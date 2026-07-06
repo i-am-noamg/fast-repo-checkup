@@ -44,7 +44,7 @@ const SAFE_ENV_KEYS: &[&str] = &[
 /// history.
 ///
 /// The subprocess environment is scrubbed: `GIT_*` and other injection-prone
-/// variables are not inherited. Set `REPO_DRAG_GLANCE_GIT` to override the git
+/// variables are not inherited. Set `FAST_REPO_CHECKUP_GIT` to override the git
 /// binary path (must not contain newlines).
 pub fn git_stdout(repo: &Path, args: &[&str]) -> Result<String, GitError> {
     if !repo.exists() {
@@ -64,7 +64,7 @@ pub fn git_stdout(repo: &Path, args: &[&str]) -> Result<String, GitError> {
 }
 
 fn git_binary() -> Result<String, GitError> {
-    let git = std::env::var("REPO_DRAG_GLANCE_GIT").unwrap_or_else(|_| "git".to_string());
+    let git = std::env::var("FAST_REPO_CHECKUP_GIT").unwrap_or_else(|_| "git".to_string());
     validate_git_binary(&git)
 }
 
@@ -92,7 +92,7 @@ fn configure_command(git: &str, repo: &Path, args: &[&str]) -> Command {
 
 fn is_safe_env_key(key: &OsStr) -> bool {
     let key = key.to_string_lossy();
-    if key.starts_with("REPO_DRAG_GLANCE_") {
+    if key.starts_with("FAST_REPO_CHECKUP_") {
         return false;
     }
     if key.starts_with("GIT_") {
@@ -132,7 +132,7 @@ mod tests {
         assert!(!is_safe_env_key(OsStr::new("GIT_DIR")));
         assert!(!is_safe_env_key(OsStr::new("GIT_WORK_TREE")));
         assert!(!is_safe_env_key(OsStr::new("LD_PRELOAD")));
-        assert!(!is_safe_env_key(OsStr::new("REPO_DRAG_GLANCE_VERBOSE")));
+        assert!(!is_safe_env_key(OsStr::new("FAST_REPO_CHECKUP_VERBOSE")));
         assert!(is_safe_env_key(OsStr::new("PATH")));
         assert!(is_safe_env_key(OsStr::new("HOME")));
     }

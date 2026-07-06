@@ -1,4 +1,4 @@
-# repo-drag-glance Docs
+# fast-repo-checkup Docs
 
 Purpose:
 

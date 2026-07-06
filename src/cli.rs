@@ -6,7 +6,7 @@ use crate::model::OutputFormat;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "repo-drag-glance",
+    name = "fast-repo-checkup",
     version,
     about = "Five git-log drag diagnostics on an unfamiliar codebase before you read code"
 )]

@@ -1,8 +1,8 @@
 use clap::Parser;
 
-use repo_drag_glance::cli::{Cli, Command};
-use repo_drag_glance::commands;
-use repo_drag_glance::git::GitError;
+use fast_repo_checkup::cli::{Cli, Command};
+use fast_repo_checkup::commands;
+use fast_repo_checkup::git::GitError;
 
 fn main() {
     if let Err(err) = run() {
@@ -27,7 +27,7 @@ fn run() -> anyhow::Result<()> {
 
 fn verbose_diagnostics() -> bool {
     matches!(
-        std::env::var("REPO_DRAG_GLANCE_VERBOSE").as_deref(),
+        std::env::var("FAST_REPO_CHECKUP_VERBOSE").as_deref(),
         Ok("1") | Ok("true") | Ok("yes")
     )
 }

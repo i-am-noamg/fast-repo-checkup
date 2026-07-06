@@ -1,4 +1,4 @@
-# repo-drag-glance
+# fast-repo-checkup
 
 Inspired by [The Git Commands I Run Before Reading Any Code](https://piechowski.io/post/git-commands-before-reading-code/).
 
@@ -27,7 +27,7 @@ Install the binary into `~/.cargo/bin`:
 
 ```bash
 cargo install --path .
-repo-drag-glance scan --repo /path/to/repo
+fast-repo-checkup scan --repo /path/to/repo
 ```
 
 

@@ -18,7 +18,7 @@ pub enum GitError {
     #[error("path is not a git repository: {0}")]
     NotGitRepository(PathBuf),
 
-    #[error("REPO_DRAG_GLANCE_GIT must be a single-line path to the git executable")]
+    #[error("FAST_REPO_CHECKUP_GIT must be a single-line path to the git executable")]
     InvalidGitBinary,
 
     #[error(

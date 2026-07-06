@@ -1,7 +1,7 @@
 # Integration tests
 
 - [`cli_integration.rs`](cli_integration.rs) — temp git repo, real `git` and
-  `repo-drag-glance` binary (`CARGO_BIN_EXE_repo_drag_glance`). Needs a normal
+  `fast-repo-checkup` binary (`CARGO_BIN_EXE_fast_repo_checkup`). Needs a normal
   environment where `git init` can create `.git/hooks` (some sandboxes block
   that).
 

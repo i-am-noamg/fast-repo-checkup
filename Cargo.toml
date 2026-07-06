@@ -1,11 +1,11 @@
 [package]
-name = "repo-drag-glance"
+name = "fast-repo-checkup"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 description = "Five git-log drag diagnostics on an unfamiliar codebase before you read code"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/i-am-noamg/repo-drag-glance"
+repository = "https://github.com/i-am-noamg/fast-repo-checkup"
 readme = "README.md"
 
 [dependencies]

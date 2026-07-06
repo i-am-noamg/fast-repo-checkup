@@ -1,6 +1,6 @@
 # CLI usage
 
-Binary name: `repo-drag-glance` (same as the Rust package).
+Binary name: `fast-repo-checkup` (same as the Rust package).
 
 Canonical metric definitions: [`docs/blogpost.md`](blogpost.md).
 
@@ -75,7 +75,7 @@ cargo test --locked
 ```
 
 See [`tests/README.md`](../tests/README.md): integration tests build a temporary
-git repository and run the `repo-drag-glance` binary (`CARGO_BIN_EXE_repo_drag_glance`).
+git repository and run the `fast-repo-checkup` binary (`CARGO_BIN_EXE_fast_repo_checkup`).
 Requires **git** on `PATH`.
 
 CI runs the same test suite on Ubuntu, macOS, and Windows, plus fmt, clippy, MSRV,
@@ -85,7 +85,7 @@ install smoke, and dependency audit — see [`architecture.md`](architecture.md#
 
 | Variable | Purpose |
 |----------|---------|
-| `REPO_DRAG_GLANCE_GIT` | Path to the `git` executable (single line; not passed to child env) |
-| `REPO_DRAG_GLANCE_VERBOSE` | Set to `1`, `true`, or `yes` to print git stderr on failures |
+| `FAST_REPO_CHECKUP_GIT` | Path to the `git` executable (single line; not passed to child env) |
+| `FAST_REPO_CHECKUP_VERBOSE` | Set to `1`, `true`, or `yes` to print git stderr on failures |
 
 See [`SECURITY.md`](../SECURITY.md) for the threat model and safe usage in CI.

@@ -29,7 +29,7 @@ fn init_fixture_repo(root: &Path) {
     git(root, &["init"]);
     git(
         root,
-        &["config", "user.email", "fixture@repodragglance.test"],
+        &["config", "user.email", "fixture@fastrepocheckup.test"],
     );
     git(root, &["config", "user.name", "Fixture"]);
     fs::create_dir_all(root.join("src")).unwrap();
@@ -52,7 +52,7 @@ fn init_monorepo_fixture(root: &Path) {
     git(root, &["init"]);
     git(
         root,
-        &["config", "user.email", "fixture@repodragglance.test"],
+        &["config", "user.email", "fixture@fastrepocheckup.test"],
     );
     git(root, &["config", "user.name", "Fixture"]);
     fs::create_dir_all(root.join("services/foo/src")).unwrap();
@@ -70,9 +70,9 @@ fn init_monorepo_fixture(root: &Path) {
 fn prior_lead_env() -> [(&'static str, &'static str); 6] {
     [
         ("GIT_AUTHOR_NAME", "PriorLead"),
-        ("GIT_AUTHOR_EMAIL", "prior@repodragglance.test"),
+        ("GIT_AUTHOR_EMAIL", "prior@fastrepocheckup.test"),
         ("GIT_COMMITTER_NAME", "PriorLead"),
-        ("GIT_COMMITTER_EMAIL", "prior@repodragglance.test"),
+        ("GIT_COMMITTER_EMAIL", "prior@fastrepocheckup.test"),
         ("GIT_AUTHOR_DATE", "2025-11-15T12:00:00"),
         ("GIT_COMMITTER_DATE", "2025-11-15T12:00:00"),
     ]
@@ -83,7 +83,7 @@ fn init_windowed_departed_repo(root: &Path) {
     git(root, &["init"]);
     git(
         root,
-        &["config", "user.email", "fixture@repodragglance.test"],
+        &["config", "user.email", "fixture@fastrepocheckup.test"],
     );
     git(root, &["config", "user.name", "Fixture"]);
     fs::create_dir_all(root.join("src")).unwrap();
@@ -104,9 +104,9 @@ fn init_windowed_departed_repo(root: &Path) {
 fn old_author_env() -> [(&'static str, &'static str); 6] {
     [
         ("GIT_AUTHOR_NAME", "OldAuthor"),
-        ("GIT_AUTHOR_EMAIL", "old@repodragglance.test"),
+        ("GIT_AUTHOR_EMAIL", "old@fastrepocheckup.test"),
         ("GIT_COMMITTER_NAME", "OldAuthor"),
-        ("GIT_COMMITTER_EMAIL", "old@repodragglance.test"),
+        ("GIT_COMMITTER_EMAIL", "old@fastrepocheckup.test"),
         ("GIT_AUTHOR_DATE", "2020-01-01T12:00:00"),
         ("GIT_COMMITTER_DATE", "2020-01-01T12:00:00"),
     ]
@@ -117,7 +117,7 @@ fn init_departed_author_repo(root: &Path) {
     git(root, &["init"]);
     git(
         root,
-        &["config", "user.email", "fixture@repodragglance.test"],
+        &["config", "user.email", "fixture@fastrepocheckup.test"],
     );
     git(root, &["config", "user.name", "Fixture"]);
     fs::create_dir_all(root.join("src")).unwrap();
@@ -135,25 +135,25 @@ fn init_departed_author_repo(root: &Path) {
     git(root, &["commit", "-m", "recent work"]);
 }
 
-fn repo_drag_glance_bin() -> std::path::PathBuf {
-    if let Some(p) = std::env::var_os("CARGO_BIN_EXE_repo_drag_glance") {
+fn fast_repo_checkup_bin() -> std::path::PathBuf {
+    if let Some(p) = std::env::var_os("CARGO_BIN_EXE_fast_repo_checkup") {
         return std::path::PathBuf::from(p);
     }
     let target = std::env::var_os("CARGO_TARGET_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target"));
     #[cfg(windows)]
-    let name = "repo-drag-glance.exe";
+    let name = "fast-repo-checkup.exe";
     #[cfg(not(windows))]
-    let name = "repo-drag-glance";
+    let name = "fast-repo-checkup";
     target.join("debug").join(name)
 }
 
 fn run_cli(args: &[&str]) -> std::process::Output {
-    Command::new(repo_drag_glance_bin())
+    Command::new(fast_repo_checkup_bin())
         .args(args)
         .output()
-        .expect("run repo-drag-glance")
+        .expect("run fast-repo-checkup")
 }
 
 #[test]
