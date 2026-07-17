@@ -142,14 +142,7 @@ fn render_table(report: &ScanReport, style: Style) -> String {
         if let Some(rows) = &m.rows {
             if !rows.is_empty() {
                 let (key_col, value_col) = m.id.row_columns();
-                let mut builder = tabled::builder::Builder::default();
-                builder.push_record([key_col, value_col]);
-                for r in rows {
-                    builder.push_record([&r.key, &r.value.to_string()]);
-                }
-                let mut table = builder.build();
-                table.with(tabled::settings::Style::rounded());
-                writeln!(&mut buf, "{table}").unwrap();
+                write_rows_table(&mut buf, key_col, value_col, rows);
             }
         } else if let Some(s) = m.scalar {
             writeln!(
@@ -179,6 +172,73 @@ fn render_table(report: &ScanReport, style: Style) -> String {
         }
     }
     buf
+}
+
+fn write_rows_table(
+    buf: &mut String,
+    key_header: &str,
+    value_header: &str,
+    rows: &[crate::model::MetricRow],
+) {
+    use std::fmt::Write;
+
+    let key_width = rows
+        .iter()
+        .map(|row| row.key.chars().count())
+        .chain(std::iter::once(key_header.chars().count()))
+        .max()
+        .unwrap_or(0);
+    let value_strings: Vec<String> = rows.iter().map(|row| row.value.to_string()).collect();
+    let value_width = value_strings
+        .iter()
+        .map(|value| value.chars().count())
+        .chain(std::iter::once(value_header.chars().count()))
+        .max()
+        .unwrap_or(0);
+
+    writeln!(
+        buf,
+        "╭─{}─┬─{}─╮",
+        "─".repeat(key_width),
+        "─".repeat(value_width)
+    )
+    .unwrap();
+    writeln!(
+        buf,
+        "│ {:key_width$} │ {:value_width$} │",
+        key_header,
+        value_header,
+        key_width = key_width,
+        value_width = value_width
+    )
+    .unwrap();
+    writeln!(
+        buf,
+        "├─{}─┼─{}─┤",
+        "─".repeat(key_width),
+        "─".repeat(value_width)
+    )
+    .unwrap();
+
+    for (row, value) in rows.iter().zip(value_strings) {
+        writeln!(
+            buf,
+            "│ {:key_width$} │ {:value_width$} │",
+            row.key,
+            value,
+            key_width = key_width,
+            value_width = value_width
+        )
+        .unwrap();
+    }
+
+    writeln!(
+        buf,
+        "╰─{}─┴─{}─╯",
+        "─".repeat(key_width),
+        "─".repeat(value_width)
+    )
+    .unwrap();
 }
 
 #[cfg(test)]

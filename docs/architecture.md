@@ -119,7 +119,6 @@ does not use a Rust cache.
 - `clap` — CLI
 - `serde` / `serde_json` — JSON report
 - `anyhow` / `thiserror` — errors
-- `tabled` — terminal tables
 
 Dev: `tempfile`, `serde_json` (integration tests).
 
