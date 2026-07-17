@@ -1,0 +1,252 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (must match Cargo.toml, e.g. 0.1.0)
+        required: true
+        type: string
+      dry_run:
+        description: Validate and build only; skip tag, GitHub Release, and crates.io
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolve-sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate release input
+        shell: bash
+        run: |
+          set -euo pipefail
+          version='${{ inputs.version }}'
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?(\+[A-Za-z0-9.-]+)?$ ]]; then
+            echo "Invalid semver version: $version" >&2
+            exit 1
+          fi
+
+          manifest_version="$(sed -nE 's/^version = "([^"]+)"/\1/p' Cargo.toml | head -n1)"
+          if [[ -z "$manifest_version" ]]; then
+            echo "Could not read package version from Cargo.toml" >&2
+            exit 1
+          fi
+
+          if [[ "$version" != "$manifest_version" ]]; then
+            echo "workflow_dispatch version ($version) must match Cargo.toml ($manifest_version)" >&2
+            exit 1
+          fi
+
+      - name: Check for existing tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          version='${{ inputs.version }}'
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "Tag v$version already exists" >&2
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "Remote tag v$version already exists" >&2
+            exit 1
+          fi
+
+      - name: Check for existing GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version='${{ inputs.version }}'
+          if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "GitHub Release v$version already exists" >&2
+            exit 1
+          fi
+
+      - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Cargo test
+        run: cargo test --locked
+
+      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: EmbarkStudios/cargo-deny-action@8f84122a46a358a27cb0625d85ad60ab436a1b87 # v2
+        with:
+          command: check all
+
+      - id: resolve-sha
+        name: Resolve release SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build (${{ matrix.os }})
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive_suffix: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive_suffix: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive_suffix: zip
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+
+      - name: Cargo build
+        run: cargo build --release --locked
+
+      - name: Package release archive (Unix)
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version='${{ inputs.version }}'
+          archive="fast-repo-checkup-v${version}-${{ matrix.target }}.${{ matrix.archive_suffix }}"
+          tar -czf "$archive" \
+            -C target/release fast-repo-checkup \
+            -C "$GITHUB_WORKSPACE" README.md LICENSE-MIT LICENSE-APACHE
+          echo "archive=$archive" >> "$GITHUB_ENV"
+
+      - name: Package release archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}'
+          $archive = "fast-repo-checkup-v$version-${{ matrix.target }}.${{ matrix.archive_suffix }}"
+          Compress-Archive `
+            -Path target/release/fast-repo-checkup.exe, README.md, LICENSE-MIT, LICENSE-APACHE `
+            -DestinationPath $archive
+          "archive=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ matrix.target }}
+          path: ${{ env.archive }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.dry_run && github.repository == 'i-am-noamg/fast-repo-checkup' && github.ref == 'refs/heads/main' }}
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums and release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum fast-repo-checkup-v* > SHA256SUMS
+          cat > RELEASE_NOTES.md <<EOF
+          Release commit: ${{ needs.validate.outputs.sha }}
+
+          Install:
+          - macOS/Linux: download the matching archive, extract it, and place \`fast-repo-checkup\` on your PATH.
+          - Windows: download the matching archive, extract it, and place \`fast-repo-checkup.exe\` on your PATH.
+          - Cargo: \`cargo install fast-repo-checkup --locked\`
+          EOF
+
+      - name: Create annotated tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ inputs.version }}" "${{ needs.validate.outputs.sha }}" -m "Release v${{ inputs.version }}"
+          git push origin "refs/tags/v${{ inputs.version }}"
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: v${{ inputs.version }}
+          target_commitish: ${{ needs.validate.outputs.sha }}
+          body_path: dist/RELEASE_NOTES.md
+          generate_release_notes: true
+          files: |
+            dist/fast-repo-checkup-v*
+            dist/SHA256SUMS
+
+  publish-crates:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.dry_run && github.repository == 'i-am-noamg/fast-repo-checkup' && github.ref == 'refs/heads/main' }}
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+
+      - uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+
+      - name: Cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --locked

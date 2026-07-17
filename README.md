@@ -30,6 +30,8 @@ cargo install --path .
 fast-repo-checkup scan --repo /path/to/repo
 ```
 
+Prebuilt binaries are published from GitHub Releases for Linux, macOS, and Windows.
+
 
 
 ## Documentation
@@ -66,3 +68,11 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on push/PR to `main`
 Dependabot (`.github/dependabot.yml`) opens weekly Cargo and monthly GitHub Actions update PRs.
 
 Security policy: [`SECURITY.md`](SECURITY.md).
+
+## Releases
+
+Maintainers cut releases manually from GitHub Actions via `.github/workflows/release.yml`.
+Create a protected GitHub Environment named `release`, add at least one required reviewer,
+and store the crate-scoped `CARGO_REGISTRY_TOKEN` there before the first live publish.
+Run the first dispatch with `dry_run=true` to validate the version, CI gates, and packaging
+before approving a real publish in the protected `release` environment.

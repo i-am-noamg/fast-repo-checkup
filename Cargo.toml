@@ -4,9 +4,21 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 description = "Five git-log drag diagnostics on an unfamiliar codebase before you read code"
+authors = ["Noam Gal <i-am-noamg@users.noreply.github.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/i-am-noamg/fast-repo-checkup"
 readme = "README.md"
+keywords = ["git", "cli", "diagnostics", "analytics", "engineering"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = [
+    ".agents/**",
+    ".codex/**",
+    ".github/**",
+    "deny.toml",
+    "docs/**",
+    "rust-toolchain.toml",
+    "tests/**",
+]
 
 [dependencies]
 anyhow = "1.0.103"
