@@ -46,8 +46,10 @@ We aim to acknowledge reports within a few business days.
 ## Dependency and CI security
 
 - [`.github/workflows/ci.yml`](.github/workflows/ci.yml) uses minimal workflow permissions (`contents: read`).
+- [`.github/workflows/security.yml`](.github/workflows/security.yml) runs a weekly RustSec audit for newly disclosed advisories.
 - [`.github/dependabot.yml`](.github/dependabot.yml) proposes dependency updates.
 - [`deny.toml`](deny.toml) enforces license, advisory, and source policies in CI.
+- Rust caches are job-scoped, exclude installed binaries, save only from trusted branch runs, and are not used by the token-bearing release publish job.
 
 ## Safe development practices
 

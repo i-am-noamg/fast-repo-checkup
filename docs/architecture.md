@@ -109,7 +109,10 @@ Subprocess rules (see also `src/git/run.rs`):
   before table/JSON render (ANSI/control stripping).
 - **Redacted errors** — git stderr is hidden unless `FAST_REPO_CHECKUP_VERBOSE=1`.
 
-Supply chain: [`deny.toml`](../deny.toml), RustSec audit, and Dependabot in CI.
+Supply chain: [`deny.toml`](../deny.toml), RustSec audit, scheduled security scans,
+and Dependabot in CI. Rust dependency caches are job-scoped, exclude installed
+binaries, and are saved only by trusted branch runs; the release publishing job
+does not use a Rust cache.
 
 ## Dependencies (current)
 
@@ -139,4 +142,5 @@ Dev: `tempfile`, `serde_json` (integration tests).
   - **install-smoke** — `cargo install --path . --locked` + binary smoke test
   - **audit** — RustSec advisory check (`rustsec/audit-check`)
   - **deny** — license/advisory/source policy (`cargo deny check all`)
+- **Scheduled security** ([`../.github/workflows/security.yml`](../.github/workflows/security.yml)) — weekly RustSec audit for newly disclosed advisories
 - **Dependabot** (`.github/dependabot.yml`) — weekly Cargo and monthly GitHub Actions updates.

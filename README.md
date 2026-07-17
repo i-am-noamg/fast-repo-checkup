@@ -65,6 +65,10 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on push/PR to `main`
 - **audit** — `rustsec/audit-check` for dependency advisories
 - **deny** — `cargo deny check all` for licenses and banned sources
 
+Rust dependency caches are job-scoped, exclude installed binaries, and are saved only by trusted branch runs. The release publishing job does not use a Rust cache.
+
+The scheduled security workflow (`.github/workflows/security.yml`) runs a weekly RustSec audit to catch advisories disclosed after the last code change.
+
 Dependabot (`.github/dependabot.yml`) opens weekly Cargo and monthly GitHub Actions update PRs.
 
 Security policy: [`SECURITY.md`](SECURITY.md).

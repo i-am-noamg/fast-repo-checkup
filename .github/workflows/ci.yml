@@ -28,8 +28,6 @@ jobs:
           toolchain: stable
           components: rustfmt
 
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-
       - name: Cargo fmt
         run: cargo fmt --all -- --check
 
@@ -44,6 +42,9 @@ jobs:
           components: clippy
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          cache-bin: false
+          save-if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
 
       - name: Cargo clippy
         run: cargo clippy --all-targets --locked -- -D warnings
@@ -66,6 +67,9 @@ jobs:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          cache-bin: false
+          save-if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
 
       - name: Cargo test
         if: matrix.os != 'windows-latest'
@@ -85,6 +89,9 @@ jobs:
           toolchain: "1.85"
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          cache-bin: false
+          save-if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
 
       - name: Cargo test (MSRV)
         run: cargo test --locked
@@ -99,6 +106,9 @@ jobs:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          cache-bin: false
+          save-if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
 
       - name: Cargo install
         run: cargo install --path . --locked --force
