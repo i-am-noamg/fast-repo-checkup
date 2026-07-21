@@ -2,15 +2,25 @@
 
 Inspired by [The Git Commands I Run Before Reading Any Code](https://piechowski.io/post/git-commands-before-reading-code/).
 
-Five **git log** drag diagnostics on an unfamiliar codebase before you open a file: churn
-hotspots, bus factor, bug clusters, delivery pace, and firefighting-style commits,
-plus lightweight alert hints.
+`fast-repo-checkup` is a Rust CLI that maps code churn, ownership concentration, bug
+hotspots, delivery pace, and firefighting patterns before you read an unfamiliar codebase.
+It also adds lightweight alert hints for signals worth investigating.
 
 [docs/blogpost.md](docs/blogpost.md) is a markdown version of the original blogpost.
 
 ## Quick start
 
-Requirements: **Rust** (see `rust-version` in [Cargo.toml](Cargo.toml)), **git** on `PATH`, and a repo with **at least one commit**.
+Requirements: **git** on `PATH` and a repo with **at least one commit**. Cargo installs
+also require a Rust toolchain; prebuilt binaries are available below.
+
+Install the latest published release from [crates.io](https://crates.io/crates/fast-repo-checkup):
+
+```bash
+cargo install fast-repo-checkup --locked
+fast-repo-checkup scan --repo /path/to/repo --source-dir src
+```
+
+For local development from a checkout:
 
 ```bash
 cargo build
@@ -23,14 +33,38 @@ JSON:
 cargo run -- scan --repo . --format json
 ```
 
-Install the binary into `~/.cargo/bin`:
+Install directly from the repository instead:
 
 ```bash
-cargo install --path .
+cargo install --git https://github.com/i-am-noamg/fast-repo-checkup --locked
 fast-repo-checkup scan --repo /path/to/repo
 ```
 
-Prebuilt binaries are published from GitHub Releases for Linux, macOS, and Windows.
+Prebuilt binaries are also published on [GitHub Releases](https://github.com/i-am-noamg/fast-repo-checkup/releases) for Linux, macOS, and Windows.
+
+## Interpreting the results
+
+These are historical signals, not definitive code-quality scores. The results depend
+on commit history and message quality:
+
+- churn counts commits that touch files; it does not measure lines changed
+- bug hotspots match bug-related words in commit messages; they are not production
+  incident data
+- ownership is based on commit counts, and squash merges can hide contributors
+- delivery pace and firefighting patterns describe Git history, not the whole delivery process
+
+Use the report to decide where to look next, then validate the signal in the code and
+with the people who maintain it.
+
+## Representative output
+
+```text
+== Alerts ==
+[High] churn_and_bug_overlap — Files appear in both high churn and bug hotspots.
+[Warning] bus_factor_dominance — Top contributor dominates the commit history.
+```
+
+The exact alerts and evidence vary by repository, time window, and source directories.
 
 
 
@@ -76,7 +110,9 @@ Security policy: [`SECURITY.md`](SECURITY.md).
 ## Releases
 
 Maintainers cut releases manually from GitHub Actions via `.github/workflows/release.yml`.
+Each release is published to [crates.io](https://crates.io/crates/fast-repo-checkup) and
+[GitHub Releases](https://github.com/i-am-noamg/fast-repo-checkup/releases).
 Create a protected GitHub Environment named `release`, add at least one required reviewer,
-and store the crate-scoped `CARGO_REGISTRY_TOKEN` there before the first live publish.
-Run the first dispatch with `dry_run=true` to validate the version, CI gates, and packaging
-before approving a real publish in the protected `release` environment.
+and store the crate-scoped `CARGO_REGISTRY_TOKEN` there. Run each dispatch with
+`dry_run=true` first when validating the version, CI gates, and packaging before approving
+a live publish in the protected `release` environment.

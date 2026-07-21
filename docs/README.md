@@ -2,7 +2,7 @@
 
 Purpose:
 
-- Provide a simple, open-source CLI for the five git-log drag diagnostics from
+- Provide a simple, open-source CLI for five Git history diagnostics from
   [`blogpost.md`](blogpost.md) — a first pass on an unfamiliar codebase before you read code.
 
 Audience:
@@ -24,3 +24,4 @@ Notes:
 
 - These metrics are only as good as the commit history. If teams squash or
   write vague messages, some signals will be weaker.
+- Treat the output as investigation guidance, not as a definitive code-quality score.

@@ -62,11 +62,21 @@ Prints the blogpost command and the CLI's git equivalent.
 cargo run -- explain bus_factor
 ```
 
-## Install (from source)
+## Install
+
+Install the latest published release from crates.io:
 
 ```bash
-cargo install --path . --locked
+cargo install fast-repo-checkup --locked
 ```
+
+Or install from the GitHub repository while developing an unreleased change:
+
+```bash
+cargo install --git https://github.com/i-am-noamg/fast-repo-checkup --locked
+```
+
+Prebuilt binaries for Linux, macOS, and Windows are available from [GitHub Releases](https://github.com/i-am-noamg/fast-repo-checkup/releases).
 
 ## Tests
 

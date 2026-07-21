@@ -16,8 +16,9 @@ CLI: `--source-dir src` (repeatable), `--since "1 year ago"`, `--top 20`.
 
 Why it matters:
 
-- High churn can indicate unstable architecture or concentrated risk.
-- Cross-check with bug hotspots to find files that change a lot and break a lot.
+- High churn can indicate unstable architecture or concentrated risk, but it can also
+  reflect active development.
+- Cross-check with bug hotspots to find files that change a lot and attract bug-labeled commits.
 
 ## 2) Bus factor / ownership concentration
 
@@ -43,8 +44,9 @@ CLI: `--since "1 year ago"`, `--recent-since "6 months ago"`, `--full-history` f
 
 Why it matters:
 
-- If one person dominates the analysis window, a departure creates knowledge risk.
+- If one person dominates the analysis window, a departure may create knowledge risk.
 - If the top contributor from the main window is absent in the recent window, flag it immediately.
+- Commit counts are only a proxy for ownership; squash merges and bot commits can distort them.
 
 ## 3) Bug hotspots
 
@@ -58,8 +60,9 @@ CLI: `--source-dir src` (repeatable), `--since "1 year ago"`, `--top 20`, `--ful
 
 Why it matters:
 
-- Frequent bug fixes in the same files are a strong quality signal.
-- Compare against churn hotspots; overlap is highest risk.
+- Frequent bug-labeled commits in the same files are a signal worth investigating, not proof
+  of a defect cluster.
+- Compare against churn hotspots; overlap identifies a useful place to look first.
 
 ## 4) Delivery pace
 
@@ -74,7 +77,8 @@ CLI: `--since "1 year ago"` (default) scopes the log to a rolling window so outp
 Why it matters:
 
 - Sharp drops can indicate staffing changes or stalled delivery.
-- Spiky output can indicate batched releases instead of steady shipping.
+- Spiky output can indicate batched releases instead of steady shipping; commit volume is
+  not a complete measure of delivery.
 
 ## 5) Firefighting frequency
 
@@ -86,7 +90,8 @@ CLI: `--since "1 year ago"`.
 
 Why it matters:
 
-- Frequent reverts indicate fragile deployment or low confidence in changes.
+- Frequent revert- or incident-labeled commits may indicate fragile deployment or low
+  confidence in changes; the keyword filter cannot see incidents described differently.
 
 ## Per-metric `--since` rules
 
